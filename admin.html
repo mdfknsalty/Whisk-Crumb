@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whisk & Crumb Dashboard</title>
+<style>
+body {margin:0;font-family: Arial;background: linear-gradient(135deg,#fff1e6,#ffe0b3);overflow-x:hidden;}
+header {position: relative; background: rgba(139,69,19,0.85); color: white; text-align: center; padding: 20px; backdrop-filter: blur(10px); border-bottom: 2px solid #d2691e;}
+.order {background: rgba(255,255,255,0.85); margin: 10px; padding: 15px; border-radius: 12px; box-shadow: 0 6px 12px rgba(0,0,0,0.2); position: relative;}
+.order button {position: absolute; top: 10px; right: 10px; background:#d2691e;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;}
+.order button:hover {background:#f5a261;}
+.fall {position: fixed; top:-50px; animation: fall linear infinite; font-size:20px;}
+@keyframes fall {to {transform: translateY(100vh) rotate(360deg);}}
+</style>
+</head>
+<body>
+<header>
+<h1>Whisk & Crumb Dashboard 📦</h1>
+<button onclick="logout()">Logout</button>
+</header>
+<div id="ordersContainer"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "whiskncrumbcom.firebaseapp.com",
+  databaseURL: "https://whiskncrumbcom-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "whiskncrumbcom",
+  storageBucket: "whiskncrumbcom.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// AUTH
+if(localStorage.getItem("auth")!=="yes"){location.href="login.html";}
+
+// Live Orders
+const container=document.getElementById("ordersContainer");
+db.ref("orders").on("value",snapshot=>{
+  container.innerHTML="";
+  const orders=snapshot.val();
+  if(!orders) return;
+  Object.keys(orders).forEach(key=>{
+    const o=orders[key];
+    const div=document.createElement("div");
+    div.className="order";
+    let html=`<b>${o.name}</b> | ${o.contact}<br>${o.address}<hr>`;
+    o.items.forEach(i=>{html+=`${i.name} x${i.qty} - ₱${i.price*i.qty}<br>`});
+    html+=`<b>Total: ₱${o.total}</b>`;
+    div.innerHTML=html;
+    const delBtn=document.createElement("button");
+    delBtn.innerText="Delete";
+    delBtn.onclick=()=>{if(confirm("Delete this order?")) db.ref("orders/"+key).remove();};
+    div.appendChild(delBtn);
+    container.appendChild(div);
+  });
+});
+
+// Logout
+function logout(){localStorage.removeItem("auth");location.href="login.html";}
+
+// Falling cookies/snow
+setInterval(()=>{
+  let el=document.createElement("div"); el.className="fall"; el.innerHTML=Math.random()>0.5?"❄️":"🍪";
+  el.style.left=Math.random()*100+"vw"; el.style.fontSize=(15+Math.random()*25)+"px";
+  el.style.animationDuration=(4+Math.random()*5)+"s"; document.body.appendChild(el);
+  setTimeout(()=>el.remove(),9000);
+},400);
+</script>
+</body>
+</html>
