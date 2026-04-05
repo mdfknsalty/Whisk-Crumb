@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whisk & Crumb Owner Login</title>
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background: linear-gradient(135deg,#8b4513,#d2691e);
+  overflow:hidden;
+}
+.login {
+  position:relative;
+  padding:40px 30px;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(15px);
+  border-radius:15px;
+  text-align:center;
+  color:white;
+  z-index:1;
+}
+input {
+  width:90%;
+  padding:10px;
+  margin:10px 0;
+  border:none;
+  border-radius:5px;
+}
+button {
+  width:95%;
+  padding:10px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+  background:#fff;
+  color:#8b4513;
+  transition:0.3s;
+}
+button:hover { background:#f5deb3; }
+.glass-bg {
+  position:fixed;
+  top:50%;
+  left:50%;
+  width:400px;
+  height:300px;
+  background:url('cookies.jpg') center/cover no-repeat;
+  filter:blur(8px) brightness(0.7);
+  border-radius:20px;
+  transform:translate(-50%,-50%);
+  animation: float 6s ease-in-out infinite alternate;
+  z-index:0;
+}
+@keyframes float {
+  0% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg);}
+  50% { transform: translate(-50%, -50%) translateY(-15px) rotate(2deg);}
+  100% { transform: translate(-50%, -50%) translateY(0px) rotate(0deg);}
+}
+.fall {
+  position: fixed;
+  top:-50px;
+  font-size:20px;
+  animation: fall linear infinite;
+}
+@keyframes fall { to { transform: translateY(100vh) rotate(360deg);} }
+#dashboard {
+  display:none;
+  margin-top:20px;
+  background: rgba(255,255,255,0.2);
+  padding:20px;
+  border-radius:15px;
+  max-width:500px;
+  text-align:left;
+}
+#logoutBtn { margin-top:10px; background:#d2691e; color:white; }
+</style>
+</head>
+<body>
+
+<div class="glass-bg"></div>
+
+<div class="login" id="loginBox">
+  <h2>Whisk & Crumb Owner Login 🔐</h2>
+  <input type="text" id="user" placeholder="Username"><br>
+  <input type="password" id="pass" placeholder="Password"><br>
+  <button id="loginBtn">Login</button>
+</div>
+
+<div id="dashboard">
+  <h2>Owner Dashboard - Live Orders</h2>
+  <div id="orders"></div>
+  <button id="logoutBtn">Logout</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "whiskncrumbcom.firebaseapp.com",
+  databaseURL: "https://whiskncrumbcom-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "whiskncrumbcom",
+  storageBucket: "whiskncrumbcom.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// Login check
+function login() {
+  const u = document.getElementById("user").value;
+  const p = document.getElementById("pass").value;
+
+  if(u === "jullane" && p === "justforclout") {
+    localStorage.setItem("auth", "yes");
+    showDashboard();
+  } else {
+    alert("Wrong credentials!");
+  }
+}
+
+// Show dashboard and fetch live orders
+function showDashboard() {
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+
+  // Listen live orders
+  db.ref("orders").on("value", snapshot => {
+    const ordersDiv = document.getElementById("orders");
+    ordersDiv.innerHTML = "";
+    if(snapshot.exists()) {
+      const data = snapshot.val();
+      Object.keys(data).forEach(key => {
+        const o = data[key];
+        let items = o.items.map(i=>`${i.name} x${i.qty}`).join(", ");
+        ordersDiv.innerHTML += `<p><strong>${o.name}</strong> (${o.contact}) - ${o.address} - ${items} - ₱${o.total}</p>`;
+      });
+    } else {
+      ordersDiv.innerHTML = "<p>No orders yet.</p>";
+    }
+  });
+}
+
+// Logout
+function logout() {
+  localStorage.removeItem("auth");
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
+  document.getElementById("user").value = "";
+  document.getElementById("pass").value = "";
+}
+
+// Auto login if already authenticated
+if(localStorage.getItem("auth") === "yes") showDashboard();
+
+// Event listeners
+document.getElementById("loginBtn").addEventListener("click", login);
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.addEventListener("keydown", e=>{ if(e.key==="Enter") login(); });
+
+// Falling cookies
+setInterval(()=>{
+  let el = document.createElement("div");
+  el.className = "fall";
+  el.innerHTML = Math.random() > 0.5 ? "❄️" : "🍪";
+  el.style.left = Math.random()*100+"vw";
+  el.style.fontSize = (15+Math.random()*25)+"px";
+  el.style.animationDuration = (4+Math.random()*5)+"s";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),9000);
+},400);
+</script>
+</body>
+</html>
